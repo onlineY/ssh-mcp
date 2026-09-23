@@ -30,4 +30,7 @@ jobs:
         run: uv run --no-sync pytest -q
 
       - name: 静态检查
-        run: uv run --no-sync --with pyflakes python -m pyflakes src/ssh_hop/*.py tests/*.py
+        shell: bash
+        run: |
+          uv run --no-sync --with pyflakes python -m pyflakes \
+            src/ssh_hop/*.py tests/*.py
