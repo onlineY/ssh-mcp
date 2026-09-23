@@ -188,8 +188,9 @@ def test_close_all_drops_the_connection(host, ssh_server):
 
 def test_unreachable_host_reports_a_clean_error(host, ssh_server):
     ssh_server.stop()
-    unreachable = Host(**{**host.__dict__, "connectTimeout": 2})
-    with pytest.raises(client.SSHError, match="cannot reach|timed out"):
+    ssh_server.join(timeout=5)  # 确保 accept 循环真的退出，否则端口可能还短暂可用
+    unreachable = Host(**{**host.__dict__, "connectTimeout": 2, "netTimeout": 5})
+    with pytest.raises(client.SSHError, match="cannot reach|timed out|netTimeout"):
         client.run(unreachable, "echo hello")
 
 

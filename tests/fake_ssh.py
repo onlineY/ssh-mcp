@@ -496,12 +496,12 @@ class FakeSSHServerThread(threading.Thread):
         self.port = self.socket.getsockname()[1]
         self.instances: list[FakeSSHServer] = []
         self.transports: list[paramiko.Transport] = []
-        self._stop = threading.Event()
+        self._shutdown = threading.Event()  # 不能叫 _stop：threading.Thread 内部有 _stop() 方法
 
     def run(self) -> None:
         # Blocking accept: stop() closes the listening socket to break out. Using a socket
         # timeout here would leak onto accepted sockets on Windows and break the transport.
-        while not self._stop.is_set():
+        while not self._shutdown.is_set():
             try:
                 conn, _ = self.socket.accept()
             except OSError:
@@ -528,7 +528,7 @@ class FakeSSHServerThread(threading.Thread):
         # briefly False. Closing on that would reset the connection; wait for it, then block
         # until the transport thread ends (i.e. the connection is really over).
         deadline = time.monotonic() + 10.0
-        while not transport.is_active() and time.monotonic() < deadline and not self._stop.is_set():
+        while not transport.is_active() and time.monotonic() < deadline and not self._shutdown.is_set():
             time.sleep(0.01)
         transport.join()
         transport.close()
@@ -547,7 +547,12 @@ class FakeSSHServerThread(threading.Thread):
         raise AssertionError("no SSH session was established")
 
     def stop(self) -> None:
-        self._stop.set()
+        """Stop listening and drop every transport. Safe to call more than once."""
+        self._shutdown.set()
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         for transport in self.transports:
             try:
                 transport.close()
