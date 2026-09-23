@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# real credentials - never commit
+hosts.json
+hosts.local.json
+audit.jsonl
+audit.jsonl.*
+files/
+known_hosts.local
+
+dist/
+build/
+*.egg-info/

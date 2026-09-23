@@ -1,0 +1,58 @@
+{
+  "_comment": "Copy to hosts.json and edit. hosts.json holds plaintext credentials: keep it out of git, readable only by you. Every key under `defaults` may be overridden per host.",
+  "_auth": "Use `password` or `keyFile` (optionally `passphrase`) - exactly one. `keyFile` wins if both are set. ssh-hop refuses to start while the REPLACE_ME password or the example key path is still here, so an unedited copy fails loudly instead of mysteriously.",
+  "_commands": "allowCommands/denyCommands are Python regexes matched with re.search against the whole command; DOTALL is on, so `.` spans newlines. \"*\" (or \"\") allows everything. denyCommands wins over allowCommands. Default is [\"*\"], i.e. nothing is restricted.",
+  "defaults": {
+    "port": 22,
+    "timeout": 60,
+    "connectTimeout": 10,
+    "allowCommands": ["*"],
+    "denyCommands": [],
+    "allowUpload": true,
+    "allowDownload": true,
+    "knownHosts": "auto-add"
+  },
+  "hosts": {
+    "ubuntu-01": {
+      "desc": "Ubuntu 22.04 app server; docker compose stack under /opt/app",
+      "host": "192.168.1.10",
+      "user": "deploy",
+      "password": "REPLACE_ME",
+      "defaultCwd": "/opt/app",
+      "_note": "Full shell access: anything is allowed, including writes and sudo.",
+      "allowCommands": ["*"],
+      "uploadRoots": [],
+      "downloadRoots": []
+    },
+    "db-01": {
+      "desc": "Database box; only postgres tooling plus read-only shell basics",
+      "host": "192.168.1.20",
+      "user": "wang",
+      "keyFile": "C:/Users/me/.ssh/id_ed25519",
+      "_note": "Narrow example: the first allow rule that matches wins, so list specific rules before broad ones.",
+      "allowCommands": [
+        "^psql\\b",
+        "^pg_dump\\b",
+        "^systemctl (status|restart) postgresql",
+        "^(cat|ls|tail|grep|df|free|uptime|uname|whoami|hostname)\\b"
+      ],
+      "denyCommands": [
+        "rm\\s+-rf\\s+/",
+        "DROP\\s+(DATABASE|TABLE)"
+      ]
+    },
+    "openwrt-r2": {
+      "desc": "OpenWrt router; router tooling only",
+      "host": "192.168.1.1",
+      "user": "root",
+      "keyFile": "C:/Users/me/.ssh/id_ed25519",
+      "defaultCwd": "/",
+      "_note": "No blanket \"*\" rule here, so only the listed commands run.",
+      "allowCommands": [
+        "^(logread|ubus|uci|ip|iw|opkg list|df|free|ps|cat|ls|tail|grep|uname)\\b"
+      ],
+      "denyCommands": ["(sysupgrade|firstboot|mtd|opkg install|opkg upgrade)"],
+      "allowUpload": false
+    }
+  }
+}

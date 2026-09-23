@@ -1,0 +1,83 @@
+name: release
+
+# 打 tag 即发布：跑测试 -> 构建 wheel -> 创建 Release 并附上可安装的 .whl
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 创建 Release 需要
+
+jobs:
+  test:
+    name: 测试 (Python ${{ matrix.python-version }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 安装依赖
+        run: uv sync --extra dev --python ${{ matrix.python-version }}
+
+      - name: 跑测试
+        run: uv run --no-sync pytest -q
+
+  build-and-release:
+    name: 构建并发布
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 构建 wheel 和 sdist
+        run: uv build
+
+      - name: 校验构建产物
+        run: |
+          ls -la dist/
+          uv run --with twine twine check dist/*
+
+      - name: 附带 wheel 上传并用它验证一次安装
+        run: |
+          uv tool install ./dist/ssh_hop-*.whl
+          ssh-hop --version
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## 安装
+
+            ```bash
+            # 指定版本从 PyPI 装（若已发布）
+            uv tool install ssh-hop==${{ github.ref_name }}
+
+            # 或直接装本 Release 附带的 wheel
+            uv tool install ./ssh_hop-*.whl
+            ```
+            装完会得到两个命令：`ssh-hop`（命令行）和 `ssh-hop-mcp`（MCP 服务）。
+
+            ## 快速开始
+
+            ```bash
+            ssh-hop init              # 生成 ~/.ssh-hop/hosts.json
+            ssh-hop check --connect   # 校验并测试连接
+            ssh-hop run <别名> 'uname -a'
+            ```
+
+            客户端接入方式（Cherry Studio / Claude Code / Codex / Cursor 等）见
+            [README](https://github.com/${{ github.repository }}#客户端接入)。

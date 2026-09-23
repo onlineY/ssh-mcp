@@ -1,0 +1,53 @@
+[project]
+name = "ssh-hop"
+version = "0.1.0"
+description = "给 AI 用的 SSH / SFTP 代理：本机 stdio MCP 服务，AI 只认别名，凭据不出本机进程"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "onlineY" }]
+keywords = ["mcp", "ssh", "sftp", "model-context-protocol", "ai", "agent", "cli"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Internet",
+  "Topic :: System :: Systems Administration",
+  "Topic :: Terminals :: Telnet",
+]
+dependencies = [
+  "mcp>=1.2.0",
+  "paramiko>=3.4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+ssh-hop = "ssh_hop.cli:main"
+ssh-hop-mcp = "ssh_hop.server:main"
+
+[project.urls]
+Homepage = "https://github.com/onlineY/ssh-mcp"
+Repository = "https://github.com/onlineY/ssh-mcp"
+Issues = "https://github.com/onlineY/ssh-mcp/issues"
+Changelog = "https://github.com/onlineY/ssh-mcp/releases"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ssh_hop"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
